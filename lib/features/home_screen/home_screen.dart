@@ -1,5 +1,6 @@
 import 'dart:developer';
 
+import 'package:corona_virus/core/utils.dart';
 import 'package:corona_virus/features/components/board_cell.dart';
 import 'package:corona_virus/model/virus_model.dart';
 import 'package:flutter/material.dart';
@@ -63,7 +64,7 @@ class _HomeScreenState extends State<HomeScreen> {
                       setState(() {
                         board[row][column] = VirusModel(
                             player: playerNumberTurn,
-                            virusCount: 1,
+                            virusCount: Utils.increaseVirus(board[row][column]),
                             willExplode: false);
                         if (playerNumberTurn >= 4) {
                           playerNumberTurn = 1;

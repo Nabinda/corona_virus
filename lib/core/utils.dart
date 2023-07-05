@@ -19,6 +19,16 @@ class Utils {
     }
   }
 
+  static int increaseVirus(VirusModel? virus) {
+    if (virus?.willExplode ?? false) {
+      return 0;
+    }
+    if ((virus?.virusCount ?? 0) < 3) {
+      return (virus?.virusCount ?? 0) + 1;
+    }
+    return 1;
+  }
+
   static Widget? getPlayerVirus(VirusModel? virus) {
     if (virus != null) {
       if (virus.virusCount == 3) {
