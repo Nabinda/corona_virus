@@ -1,5 +1,4 @@
-import 'dart:developer';
-
+import 'package:corona_virus/constants/virus_position.dart';
 import 'package:corona_virus/core/utils.dart';
 import 'package:corona_virus/features/components/board_cell.dart';
 import 'package:corona_virus/model/virus_model.dart';
@@ -30,6 +29,33 @@ class _HomeScreenState extends State<HomeScreen> {
         rowCount, (index) => List.generate(colCount, (index) => null));
     board = virus;
   }
+
+  spreadVirus(int row, int col) {}
+
+  String getVirusPosition(int row, int col) {
+    if (row == 0 && col == 0 ||
+        row == 0 && col == colCount - 1 ||
+        row == rowCount - 1 && col == 0 ||
+        row == rowCount - 1 && col == colCount - 1) {
+      // return VirusPosition.corner;
+      return 'Cor';
+    } else if (row == 0 ||
+        row == rowCount - 1 ||
+        col == 0 ||
+        col == colCount - 1) {
+      return 'ed';
+      // return VirusPosition.edge;
+    } else {
+      return 'oth';
+      // return VirusPosition.others;
+    }
+  }
+
+  bool isAboutToSpread(int row, int col) {
+    return true;
+  }
+
+  increaseVirusLogic(int row, int col) {}
 
   update(int row, int col) {
     setState(() {
@@ -75,13 +101,15 @@ class _HomeScreenState extends State<HomeScreen> {
                 itemBuilder: (context, index) {
                   int row = index ~/ 6;
                   int column = index % 6;
+                  return Center(
+                      child: Text(getVirusPosition(row, column).toString()));
 
-                  return BoardCell(
-                    func: () {
-                      rawLogic(row, column);
-                    },
-                    virus: board[row][column],
-                  );
+                  // return BoardCell(
+                  //   func: () {
+                  //     rawLogic(row, column);
+                  //   },
+                  //   virus: board[row][column],
+                  // );
                 },
               ),
             ),
