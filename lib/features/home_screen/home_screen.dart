@@ -31,6 +31,28 @@ class _HomeScreenState extends State<HomeScreen> {
     board = virus;
   }
 
+  update(int row, int col) {
+    setState(() {
+      board[row][col] = VirusModel(
+          player: playerNumberTurn,
+          virusCount: Utils.increaseVirus(board[row][col]),
+          willExplode: false);
+      if (playerNumberTurn >= 4) {
+        playerNumberTurn = 1;
+      } else {
+        playerNumberTurn++;
+      }
+    });
+  }
+
+  rawLogic(int row, int col) {
+    if (board[row][col]?.player == null) {
+      update(row, col);
+    } else if (board[row][col]?.player == playerNumberTurn) {
+      update(row, col);
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -53,25 +75,10 @@ class _HomeScreenState extends State<HomeScreen> {
                 itemBuilder: (context, index) {
                   int row = index ~/ 6;
                   int column = index % 6;
-                  // return GestureDetector(
-                  //     onTap: () {
-                  //       log('($row,$column)');
-                  //     },
-                  //     child: Text('($row,$column)'));
+
                   return BoardCell(
                     func: () {
-                      log('$row,$column');
-                      setState(() {
-                        board[row][column] = VirusModel(
-                            player: playerNumberTurn,
-                            virusCount: Utils.increaseVirus(board[row][column]),
-                            willExplode: false);
-                        if (playerNumberTurn >= 4) {
-                          playerNumberTurn = 1;
-                        } else {
-                          playerNumberTurn++;
-                        }
-                      });
+                      rawLogic(row, column);
                     },
                     virus: board[row][column],
                   );
