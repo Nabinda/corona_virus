@@ -1,7 +1,4 @@
-import 'dart:developer';
-
 import 'package:corona_virus/constants/virus_position.dart';
-import 'package:corona_virus/core/utils.dart';
 import 'package:corona_virus/features/components/board_cell.dart';
 import 'package:corona_virus/model/virus_model.dart';
 import 'package:flutter/material.dart';
@@ -51,8 +48,18 @@ class _HomeScreenState extends State<HomeScreen> {
     }
   }
 
-  bool isAboutToSpread(int row, int col) {
-    return true;
+  bool isAboutToSpread(int row, int col, int updatedVirus) {
+    VirusPosition currentPosition = getVirusPosition(row, col);
+
+    if (currentPosition == VirusPosition.corner && updatedVirus == 1) {
+      return true;
+    } else if (currentPosition == VirusPosition.edge && updatedVirus == 2) {
+      return true;
+    } else if (currentPosition == VirusPosition.others && updatedVirus == 3) {
+      return true;
+    } else {
+      return false;
+    }
   }
 
   int increaseVirusLogic(int row, int col) {
@@ -90,17 +97,15 @@ class _HomeScreenState extends State<HomeScreen> {
 
   update(int row, int col) {
     int increaseVirusCount = increaseVirusLogic(row, col);
-    log('Increase Virus: $increaseVirusCount');
-    log('Player Turn: $playerNumberTurn');
+    ;
     setState(() {
       if (increaseVirusCount == 0 && isGameStarted) {
-        log('Null The Virus');
         board[row][col] = null;
       } else {
         board[row][col] = VirusModel(
             player: playerNumberTurn,
             virusCount: increaseVirusCount,
-            willExplode: false);
+            willExplode: isAboutToSpread(row, col, increaseVirusCount));
       }
       changePlayerTurn();
     });
