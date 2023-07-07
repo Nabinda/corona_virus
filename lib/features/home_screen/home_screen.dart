@@ -175,8 +175,6 @@ class _HomeScreenState extends State<HomeScreen> {
                 itemBuilder: (context, index) {
                   int row = index ~/ 6;
                   int column = index % 6;
-                  // return Center(
-                  //     child: Text(getVirusPosition(row, column).toString()));
 
                   return BoardCell(
                     func: () {
