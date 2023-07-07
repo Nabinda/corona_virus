@@ -1,3 +1,5 @@
+import 'dart:developer';
+
 import 'package:corona_virus/constants/virus_position.dart';
 import 'package:corona_virus/features/components/board_cell.dart';
 import 'package:corona_virus/model/virus_model.dart';
@@ -30,8 +32,6 @@ class _HomeScreenState extends State<HomeScreen> {
     board = virus;
   }
 
-  spreadVirus(int row, int col) {}
-
   VirusPosition getVirusPosition(int row, int col) {
     if (row == 0 && col == 0 ||
         row == 0 && col == colCount - 1 ||
@@ -45,6 +45,39 @@ class _HomeScreenState extends State<HomeScreen> {
       return VirusPosition.edge;
     } else {
       return VirusPosition.others;
+    }
+  }
+
+  bool checkIfValidRegion(int row, int col) {
+    log('($row,$col)');
+    if (row < rowCount && row >= 0 && col >= 0 && col < colCount) {
+      return true;
+    } else {
+      return false;
+    }
+  }
+
+  spreadVirus(int row, int col, int playerId) {
+    //For X-Axis Spread (row)
+    //Y variable stays constant(col)
+    bool canSpreadLeft = checkIfValidRegion(row - 1, col);
+    bool canSpreadRight = checkIfValidRegion(row + 1, col);
+    //For Y-Axis Spread
+    //X variable stays constant(row)
+    bool canSpreadTop = checkIfValidRegion(row, col + 1);
+    bool canSpreadBottom = checkIfValidRegion(row, col - 1);
+    //TODO:: Update the animation Here
+    if (canSpreadRight) {
+      update(row + 1, col, newPlayer: playerId);
+    }
+    if (canSpreadLeft) {
+      update(row - 1, col, newPlayer: playerId);
+    }
+    if (canSpreadTop) {
+      update(row, col + 1, newPlayer: playerId);
+    }
+    if (canSpreadBottom) {
+      update(row, col - 1, newPlayer: playerId);
     }
   }
 
@@ -95,27 +128,28 @@ class _HomeScreenState extends State<HomeScreen> {
     }
   }
 
-  update(int row, int col) {
+  update(int row, int col, {int? newPlayer}) {
     int increaseVirusCount = increaseVirusLogic(row, col);
-    ;
     setState(() {
       if (increaseVirusCount == 0 && isGameStarted) {
         board[row][col] = null;
+        spreadVirus(row, col, playerNumberTurn);
       } else {
         board[row][col] = VirusModel(
-            player: playerNumberTurn,
+            player: newPlayer ?? playerNumberTurn,
             virusCount: increaseVirusCount,
             willExplode: isAboutToSpread(row, col, increaseVirusCount));
       }
-      changePlayerTurn();
     });
   }
 
   rawLogic(int row, int col) {
     if (board[row][col]?.player == null) {
       update(row, col);
+      changePlayerTurn();
     } else if (board[row][col]?.player == playerNumberTurn) {
       update(row, col);
+      changePlayerTurn();
     }
   }
 
