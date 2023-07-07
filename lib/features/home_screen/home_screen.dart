@@ -1,3 +1,5 @@
+import 'dart:developer';
+
 import 'package:corona_virus/constants/virus_position.dart';
 import 'package:corona_virus/core/utils.dart';
 import 'package:corona_virus/features/components/board_cell.dart';
@@ -16,6 +18,7 @@ class _HomeScreenState extends State<HomeScreen> {
   late List<List<VirusModel?>> board;
   int rowCount = 8;
   int colCount = 6;
+  bool isGameStarted = false;
 
   @override
   void initState() {
@@ -32,22 +35,19 @@ class _HomeScreenState extends State<HomeScreen> {
 
   spreadVirus(int row, int col) {}
 
-  String getVirusPosition(int row, int col) {
+  VirusPosition getVirusPosition(int row, int col) {
     if (row == 0 && col == 0 ||
         row == 0 && col == colCount - 1 ||
         row == rowCount - 1 && col == 0 ||
         row == rowCount - 1 && col == colCount - 1) {
-      // return VirusPosition.corner;
-      return 'Cor';
+      return VirusPosition.corner;
     } else if (row == 0 ||
         row == rowCount - 1 ||
         col == 0 ||
         col == colCount - 1) {
-      return 'ed';
-      // return VirusPosition.edge;
+      return VirusPosition.edge;
     } else {
-      return 'oth';
-      // return VirusPosition.others;
+      return VirusPosition.others;
     }
   }
 
@@ -55,19 +55,54 @@ class _HomeScreenState extends State<HomeScreen> {
     return true;
   }
 
-  increaseVirusLogic(int row, int col) {}
+  int increaseVirusLogic(int row, int col) {
+    int previousVirusCount = board[row][col]?.virusCount ?? 0;
+    VirusPosition virusPosition = getVirusPosition(row, col);
+    if (virusPosition == VirusPosition.corner) {
+      if (previousVirusCount < 1) {
+        return 1;
+      } else {
+        return 0;
+      }
+    } else if (virusPosition == VirusPosition.edge) {
+      if (previousVirusCount < 2) {
+        return previousVirusCount + 1;
+      } else {
+        return 0;
+      }
+    } else {
+      if (previousVirusCount < 3) {
+        return previousVirusCount + 1;
+      } else {
+        return 0;
+      }
+    }
+  }
+
+  changePlayerTurn() {
+    if (playerNumberTurn >= 4) {
+      isGameStarted = true;
+      playerNumberTurn = 1;
+    } else {
+      playerNumberTurn++;
+    }
+  }
 
   update(int row, int col) {
+    int increaseVirusCount = increaseVirusLogic(row, col);
+    log('Increase Virus: $increaseVirusCount');
+    log('Player Turn: $playerNumberTurn');
     setState(() {
-      board[row][col] = VirusModel(
-          player: playerNumberTurn,
-          virusCount: Utils.increaseVirus(board[row][col]),
-          willExplode: false);
-      if (playerNumberTurn >= 4) {
-        playerNumberTurn = 1;
+      if (increaseVirusCount == 0 && isGameStarted) {
+        log('Null The Virus');
+        board[row][col] = null;
       } else {
-        playerNumberTurn++;
+        board[row][col] = VirusModel(
+            player: playerNumberTurn,
+            virusCount: increaseVirusCount,
+            willExplode: false);
       }
+      changePlayerTurn();
     });
   }
 
@@ -101,15 +136,15 @@ class _HomeScreenState extends State<HomeScreen> {
                 itemBuilder: (context, index) {
                   int row = index ~/ 6;
                   int column = index % 6;
-                  return Center(
-                      child: Text(getVirusPosition(row, column).toString()));
+                  // return Center(
+                  //     child: Text(getVirusPosition(row, column).toString()));
 
-                  // return BoardCell(
-                  //   func: () {
-                  //     rawLogic(row, column);
-                  //   },
-                  //   virus: board[row][column],
-                  // );
+                  return BoardCell(
+                    func: () {
+                      rawLogic(row, column);
+                    },
+                    virus: board[row][column],
+                  );
                 },
               ),
             ),
