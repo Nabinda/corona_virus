@@ -183,7 +183,10 @@ class _HomeScreenState extends State<HomeScreen> {
       if (currentPlayerIndex < (alivePlayer.length - 1)) {
         playerNumberTurn = alivePlayer[currentPlayerIndex + 1];
       } else {
-        isGameStarted = true;
+        //Once everyone gets there turn then the game is officially started
+        if (!isGameStarted) {
+          isGameStarted = true;
+        }
         playerNumberTurn = alivePlayer[0];
       }
     } else {
