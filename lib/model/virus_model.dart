@@ -1,5 +1,7 @@
+import 'package:corona_virus/model/player_model.dart';
+
 class VirusModel {
-  final int? player;
+  final PlayerModel? player;
   final bool? willExplode;
   final int? virusCount;
   final int? rowPosition;

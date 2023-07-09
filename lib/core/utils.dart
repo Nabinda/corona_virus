@@ -34,31 +34,31 @@ class Utils {
       if (virus.virusCount == 3) {
         return Image.asset(
           AppIconConstants.corona3,
-          color: getPlayerColor(virus.player),
+          color: getPlayerColor(virus.player?.sequence),
         );
       }
       if (virus.virusCount == 2 && (virus.willExplode ?? false)) {
         return Image.asset(
           AppIconConstants.corona2fast,
-          color: getPlayerColor(virus.player),
+          color: getPlayerColor(virus.player?.sequence),
         );
       }
       if (virus.virusCount == 2 && !(virus.willExplode ?? true)) {
         return Image.asset(
           AppIconConstants.corona2slow,
-          color: getPlayerColor(virus.player),
+          color: getPlayerColor(virus.player?.sequence),
         );
       }
       if (virus.virusCount == 1 && !(virus.willExplode ?? true)) {
         return Image.asset(
           AppIconConstants.corona1slow,
-          color: getPlayerColor(virus.player),
+          color: getPlayerColor(virus.player?.sequence),
         );
       }
       if (virus.virusCount == 1 && (virus.willExplode ?? false)) {
         return Image.asset(
           AppIconConstants.corona1fast,
-          color: getPlayerColor(virus.player),
+          color: getPlayerColor(virus.player?.sequence),
         );
       }
     }
