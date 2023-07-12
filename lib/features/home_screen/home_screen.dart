@@ -171,7 +171,7 @@ class _HomeScreenState extends State<HomeScreen> {
         }
       }
       log('Alive Players: $alivePlayer');
-      log('To Remove Players: $toRemove');
+      log('To Remove Players: $toRemove'); 
       alivePlayer.removeWhere((element) => toRemove.contains(element));
     }
     //Changing the player turn now
