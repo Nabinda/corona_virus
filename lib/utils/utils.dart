@@ -1,5 +1,5 @@
 import 'package:corona_virus/constants/app_icon_constants.dart';
-import 'package:corona_virus/constants/player_colors.dart';
+import 'package:corona_virus/themes/player_colors.dart';
 import 'package:corona_virus/model/virus_model.dart';
 import 'package:flutter/material.dart';
 

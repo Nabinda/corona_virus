@@ -1,4 +1,4 @@
-import 'package:corona_virus/features/home_screen/home_screen.dart';
+import 'package:corona_virus/screens/home_screen/home_screen.dart';
 import 'package:flutter/material.dart';
 
 class App extends StatelessWidget {

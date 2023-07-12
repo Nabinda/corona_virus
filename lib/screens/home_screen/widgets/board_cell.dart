@@ -1,4 +1,4 @@
-import 'package:corona_virus/core/utils.dart';
+import 'package:corona_virus/utils/utils.dart';
 import 'package:corona_virus/model/virus_model.dart';
 import 'package:flutter/material.dart';
 
