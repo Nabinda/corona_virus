@@ -1,4 +1,4 @@
-import 'package:corona_virus/screens/home_screen/home_screen.dart';
+import 'package:corona_virus/features/game/presentation/game_screen.dart';
 import 'package:flutter/material.dart';
 
 class App extends StatelessWidget {
@@ -12,7 +12,7 @@ class App extends StatelessWidget {
       theme: ThemeData(
         useMaterial3: true,
       ),
-      home: const HomeScreen(),
+      home: const GameScreen(),
     );
   }
 }
