@@ -15,32 +15,32 @@ Future<void> _firebaseMessagingBackgroundHandler(RemoteMessage message) async {
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
-  SystemChrome.setSystemUIOverlayStyle(const SystemUiOverlayStyle(
-      statusBarColor: Colors.transparent // transparent status bar
-      ));
-  await Firebase.initializeApp(
-    options: DefaultFirebaseOptions.currentPlatform,
-  );
-  FirebaseMessaging.onBackgroundMessage(_firebaseMessagingBackgroundHandler);
-  final firebaseMessaging = FirebaseMessaging.instance;
-  await firebaseMessaging.requestPermission(
-    alert: true,
-    badge: true,
-    sound: true,
-  );
-  await firebaseMessaging.setForegroundNotificationPresentationOptions(
-    alert: true,
-    badge: true,
-    sound: true,
-  );
-  try {
-    await FirebaseAnalytics.instance
-        .logAppOpen()
-        .then((value) => log('APP OPEN LOGGED'));
-  } catch (e) {
-    log('App Open Log Error: $e');
-  }
-  final fcmToken = await FirebaseMessaging.instance.getToken();
-  log('FCMTOKEN :$fcmToken');
+  // SystemChrome.setSystemUIOverlayStyle(const SystemUiOverlayStyle(
+  //     statusBarColor: Colors.transparent // transparent status bar
+  //     ));
+  // await Firebase.initializeApp(
+  //   options: DefaultFirebaseOptions.currentPlatform,
+  // );
+  // FirebaseMessaging.onBackgroundMessage(_firebaseMessagingBackgroundHandler);
+  // final firebaseMessaging = FirebaseMessaging.instance;
+  // await firebaseMessaging.requestPermission(
+  //   alert: true,
+  //   badge: true,
+  //   sound: true,
+  // );
+  // await firebaseMessaging.setForegroundNotificationPresentationOptions(
+  //   alert: true,
+  //   badge: true,
+  //   sound: true,
+  // );
+  // try {
+  //   await FirebaseAnalytics.instance
+  //       .logAppOpen()
+  //       .then((value) => log('APP OPEN LOGGED'));
+  // } catch (e) {
+  //   log('App Open Log Error: $e');
+  // }
+  // final fcmToken = await FirebaseMessaging.instance.getToken();
+  // log('FCMTOKEN :$fcmToken');
   runApp(const App());
 }

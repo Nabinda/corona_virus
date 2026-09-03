@@ -85,41 +85,43 @@ class _HomeScreenState extends State<HomeScreen> {
                     )
                   ],
                 ),
-                Container(
-                  decoration: BoxDecoration(border: Border.all()),
-                  child: MediaQuery.removePadding(
-                    context: context,
-                    removeTop: true,
-                    child: GridView.builder(
-                      itemCount: 6 * 8,
-                      shrinkWrap: true,
-                      physics: const NeverScrollableScrollPhysics(),
-                      gridDelegate:
-                          const SliverGridDelegateWithFixedCrossAxisCount(
-                              crossAxisCount: 6),
-                      itemBuilder: (context, index) {
-                        int row = index ~/ 6;
-                        int column = index % 6;
+                Expanded(
+                  child: Container(
+                    decoration: BoxDecoration(border: Border.all()),
+                    child: MediaQuery.removePadding(
+                      context: context,
+                      removeTop: true,
+                      child: GridView.builder(
+                        itemCount: 6 * 8,
+                        shrinkWrap: true,
+                        physics: const NeverScrollableScrollPhysics(),
+                        gridDelegate:
+                            const SliverGridDelegateWithFixedCrossAxisCount(
+                                crossAxisCount: 6),
+                        itemBuilder: (context, index) {
+                          int row = index ~/ 6;
+                          int column = index % 6;
 
-                        return ValueListenableBuilder<bool>(
-                            valueListenable: isGameStarted,
-                            builder: (context, bool gameStarted, child) {
-                              return BoardCell(
-                                func: () {
-                                  rawLogic(
-                                      row: row,
-                                      col: column,
-                                      playerTurn: playerTurn,
-                                      playerNumberTurn: playerNumberTurn,
-                                      isGameStarted: isGameStarted,
-                                      gameStarted: gameStarted,
-                                      board: board,
-                                      alivePlayer: alivePlayer);
-                                },
-                                virus: board[row][column],
-                              );
-                            });
-                      },
+                          return ValueListenableBuilder<bool>(
+                              valueListenable: isGameStarted,
+                              builder: (context, bool gameStarted, child) {
+                                return BoardCell(
+                                  func: () {
+                                    rawLogic(
+                                        row: row,
+                                        col: column,
+                                        playerTurn: playerTurn,
+                                        playerNumberTurn: playerNumberTurn,
+                                        isGameStarted: isGameStarted,
+                                        gameStarted: gameStarted,
+                                        board: board,
+                                        alivePlayer: alivePlayer);
+                                  },
+                                  virus: board[row][column],
+                                );
+                              });
+                        },
+                      ),
                     ),
                   ),
                 )
