@@ -15,6 +15,8 @@ class ConsoleLogSink implements LogSink {
     required String message,
     Map<String, dynamic>? data,
     Duration? duration,
+    Object? error,
+    StackTrace? stackTrace,
   }) {
     if (level.index < minLevel.index) return;
 
@@ -33,6 +35,8 @@ class ConsoleLogSink implements LogSink {
     developer.log(
       '$time $tagColor${AnsiColors.bold}[$message]${AnsiColors.reset}$durationStr$metaStr',
       name: 'GAME',
+      error: error,
+      stackTrace: stackTrace,
     );
   }
 

@@ -1,5 +1,6 @@
 import 'package:corona_virus/features/game/domain/events/game_events.dart';
 import 'package:flutter/material.dart';
+import '../../../../core/logger/sinks/telemetry_sink.dart';
 import '../../domain/models/board.dart';
 import '../../domain/models/game_state.dart';
 import '../../domain/models/player_model.dart';
@@ -45,7 +46,7 @@ class GameController extends ChangeNotifier {
   bool get isGameOver => _state.isGameOver;
   int get turnNumber => _state.turnNumber;
 
-  void onCellTapped(int row, int col) {
+  void onCellTapped(int row, int col) async {
     if (_state.isGameOver) return;
 
     final result = _engine.executeTurn(
@@ -62,6 +63,7 @@ class GameController extends ChangeNotifier {
       if (event is PlayerEliminated) {
         onPlayerEliminated?.call(event);
       } else if (event is GameFinished) {
+        await TelemetrySink.instance.exportSessionLogs();
         onGameFinished?.call(event);
       }
     }

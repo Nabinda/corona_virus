@@ -1,3 +1,4 @@
+import 'package:corona_virus/core/logger/sinks/telemetry_sink.dart';
 import 'package:flutter/material.dart';
 import '../../../../core/logger/app_logger.dart';
 import '../../../../core/logger/sinks/console_log_sink.dart';
@@ -20,7 +21,7 @@ class GameScreen extends StatefulWidget {
 }
 
 class _GameScreenState extends State<GameScreen> {
-  static const int _rows = 9;
+  static const int _rows = 8;
   static const int _cols = 6;
 
   late final BoardEvaluator _evaluator;
@@ -35,7 +36,7 @@ class _GameScreenState extends State<GameScreen> {
     final simulator = ReactionSimulator(_evaluator);
     _engine = GameEngine(evaluator: _evaluator, simulator: simulator);
 
-    final logger = AppLogger([ConsoleLogSink()]);
+    final logger = AppLogger([ConsoleLogSink(), TelemetrySink.instance]);
     _loggerAdapter = GameLoggerAdapter(logger);
 
     _initNewGame();
@@ -96,60 +97,49 @@ class _GameScreenState extends State<GameScreen> {
 
     final winnerColor = PlayerColors.fromIndex(event.winnerPlayerId);
 
-    showDialog(
-      context: context,
-      barrierDismissible: false,
-      builder: (dialogContext) {
-        return Dialog(
-          backgroundColor: const Color(0xFF1E1E26),
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(16),
-            side:
-                BorderSide(color: winnerColor.withValues(alpha: 0.6), width: 2),
+    ScaffoldMessenger.of(context).clearSnackBars();
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        behavior: SnackBarBehavior.floating,
+        duration: const Duration(seconds: 2),
+        backgroundColor: const Color(0xFF1E1E26),
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(10),
+          side:
+              BorderSide(color: winnerColor.withValues(alpha: 0.6), width: 1.5),
+        ),
+        content: Container(
+          width: double.infinity,
+          margin: const EdgeInsets.all(16),
+          padding: const EdgeInsets.symmetric(vertical: 14, horizontal: 20),
+          decoration: BoxDecoration(
+            color: winnerColor..withValues(alpha: 0.2),
+            borderRadius: BorderRadius.circular(12),
+            border: Border.all(color: winnerColor),
           ),
-          child: Padding(
-            padding: const EdgeInsets.symmetric(vertical: 24, horizontal: 20),
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                Icon(Icons.emoji_events_rounded, color: winnerColor, size: 54),
-                const SizedBox(height: 12),
-                Text(
-                  '${event.winnerPlayerName} Wins!',
-                  style: TextStyle(
-                    color: winnerColor,
-                    fontSize: 22,
-                    fontWeight: FontWeight.bold,
-                  ),
+          child: Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Text(
+                '${event.winnerPlayerName} is Victorious!',
+                style: TextStyle(
+                  color: winnerColor,
+                  fontWeight: FontWeight.bold,
+                  fontSize: 16,
                 ),
-                const SizedBox(height: 8),
-                Text(
-                  'Match completed in ${event.matchDuration.inSeconds}s',
-                  style: const TextStyle(color: Colors.white54, fontSize: 13),
+              ),
+              ElevatedButton(
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: winnerColor,
+                  foregroundColor: Colors.black,
                 ),
-                const SizedBox(height: 20),
-                ElevatedButton.icon(
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: winnerColor,
-                    foregroundColor: Colors.black,
-                    padding: const EdgeInsets.symmetric(
-                        horizontal: 24, vertical: 12),
-                    shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(8)),
-                  ),
-                  icon: const Icon(Icons.replay_rounded),
-                  label: const Text('Play Again',
-                      style: TextStyle(fontWeight: FontWeight.bold)),
-                  onPressed: () {
-                    Navigator.of(dialogContext).pop();
-                    _restartGame();
-                  },
-                ),
-              ],
-            ),
+                onPressed: _restartGame,
+                child: const Text('Play Again'),
+              ),
+            ],
           ),
-        );
-      },
+        ),
+      ),
     );
   }
 
@@ -279,43 +269,6 @@ class _GameScreenState extends State<GameScreen> {
                     ),
                   ),
                 ),
-
-                // Bottom actions / game-over message
-                if (_controller.isGameOver)
-                  Container(
-                    width: double.infinity,
-                    margin: const EdgeInsets.all(16),
-                    padding: const EdgeInsets.symmetric(
-                        vertical: 14, horizontal: 20),
-                    decoration: BoxDecoration(
-                      color: activeColor..withValues(alpha: 0.2),
-                      borderRadius: BorderRadius.circular(12),
-                      border: Border.all(color: activeColor),
-                    ),
-                    child: Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                      children: [
-                        Text(
-                          '${activePlayer.name} is Victorious!',
-                          style: TextStyle(
-                            color: activeColor,
-                            fontWeight: FontWeight.bold,
-                            fontSize: 16,
-                          ),
-                        ),
-                        ElevatedButton(
-                          style: ElevatedButton.styleFrom(
-                            backgroundColor: activeColor,
-                            foregroundColor: Colors.black,
-                          ),
-                          onPressed: _restartGame,
-                          child: const Text('Play Again'),
-                        ),
-                      ],
-                    ),
-                  )
-                else
-                  const SizedBox(height: 20),
               ],
             ),
           ),

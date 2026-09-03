@@ -7,6 +7,8 @@ abstract interface class LogSink {
     required String message,
     Map<String, dynamic>? data,
     Duration? duration,
+    Object? error,
+    StackTrace? stackTrace,
   });
 
   Future<void> dispose();
