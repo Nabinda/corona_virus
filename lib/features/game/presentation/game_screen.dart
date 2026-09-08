@@ -258,9 +258,7 @@ class _GameScreenState extends State<GameScreen> {
                               cell: cell,
                               isCritical: !cell.isEmpty &&
                                   _evaluator.isAboutToExplode(pos, cell),
-                              cellColor: cell.playerId != null
-                                  ? PlayerColors.fromIndex(cell.playerId!)
-                                  : null,
+                        
                               onTap: () => _controller.onCellTapped(r, c),
                             );
                           },

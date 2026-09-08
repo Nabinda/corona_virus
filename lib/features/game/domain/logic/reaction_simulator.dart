@@ -1,5 +1,6 @@
 import 'dart:collection';
-import 'package:flutter/material.dart';
+
+import 'package:flutter/foundation.dart';
 
 import '../events/game_events.dart';
 import '../events/game_log_context.dart';
@@ -14,6 +15,8 @@ class SimulationResult {
   final int totalExplosions;
   final int totalSpreads;
   final int maxChainDepth;
+  final int recordedEvents;
+  final int droppedEvents;
 
   const SimulationResult({
     required this.updatedBoard,
@@ -21,11 +24,24 @@ class SimulationResult {
     required this.totalExplosions,
     required this.totalSpreads,
     required this.maxChainDepth,
+    required this.recordedEvents,
+    required this.droppedEvents,
   });
+
+  bool get eventsTruncated => droppedEvents > 0;
 }
 
 class ReactionSimulator {
   final BoardEvaluator evaluator;
+
+  /// Maximum number of events retained for one simulation.
+  ///
+  /// This does NOT limit the reaction.
+  /// It only limits event objects kept in memory.
+  static const int maxEventCapacity = 500;
+
+  /// Emergency protection against an unexpected infinite loop.
+  static const int maxIterations = 10000;
 
   const ReactionSimulator(this.evaluator);
 
@@ -36,120 +52,259 @@ class ReactionSimulator {
     required GameLogContext context,
   }) {
     final events = <GameEvent>[];
+
     int totalExplosions = 0;
     int totalSpreads = 0;
     int maxChainDepth = 0;
+    int droppedEvents = 0;
 
-    // Maximum number of micro-events recorded per turn inorder to manage memory
-    const int maxEventCapacity = 50;
+    // -------------------------------------------------------------
+    // EVENT RECORDER
+    // -------------------------------------------------------------
 
-    // Deep copy mutable grid
-    final grid = board.cells.map((r) => List<VirusModel>.from(r)).toList();
+    void recordEvent(GameEvent event) {
+      if (events.length < maxEventCapacity) {
+        events.add(event);
+      } else {
+        droppedEvents++;
+      }
+    }
 
-    // 1. Initial placement
+    // -------------------------------------------------------------
+    // COPY BOARD
+    // -------------------------------------------------------------
+
+    final grid = board.cells.map((row) => List<VirusModel>.from(row)).toList();
+
+    // -------------------------------------------------------------
+    // INITIAL PLACEMENT
+    // -------------------------------------------------------------
+
     final initialCell = grid[target.row][target.col];
-    grid[target.row][target.col] = initialCell.increment(playerId);
 
-    events.add(CellUpdated(
-      context,
-      row: target.row,
-      col: target.col,
-      virusCount: grid[target.row][target.col].virusCount,
-    ));
+    final updatedInitialCell = initialCell.increment(playerId);
 
-    // 2. Queue for  chain reactions: stores (Position, ChainDepth)
+    grid[target.row][target.col] = updatedInitialCell;
+
+    recordEvent(
+      CellUpdated(
+        context,
+        row: target.row,
+        col: target.col,
+        virusCount: updatedInitialCell.virusCount,
+      ),
+    );
+
+    // -------------------------------------------------------------
+    // INITIAL CRITICAL MASS
+    // -------------------------------------------------------------
+
+    final initialCriticalMass = evaluator.getCriticalMass(target);
+
+    final shouldExplode = updatedInitialCell.virusCount >= initialCriticalMass;
+
+    if (shouldExplode) {
+      recordEvent(
+        ReactionStarted(
+          context,
+          originRow: target.row,
+          originCol: target.col,
+        ),
+      );
+    }
+
+    // -------------------------------------------------------------
+    // REACTION QUEUE
+    // -------------------------------------------------------------
+
     final queue = Queue<(Position, int)>();
 
-    if (grid[target.row][target.col].virusCount >=
-        evaluator.getCriticalMass(target)) {
-      events.add(ReactionStarted(
-        context,
-        originRow: target.row,
-        originCol: target.col,
-      ));
+    if (shouldExplode) {
       queue.add((target, 1));
     }
 
+    // -------------------------------------------------------------
+    // PROCESS REACTIONS
+    // -------------------------------------------------------------
+
     int iterations = 0;
-    // 3. Process explosions
+
     while (queue.isNotEmpty) {
       iterations++;
-      // Safety threshold against infinite bouncing loops
-      if (iterations > 10000) {
+
+      // Emergency safety limit.
+      if (iterations > maxIterations) {
         debugPrint(
-            'CRITICAL: ReactionSimulator loop infinite bounce detected!');
+          '[ReactionSimulator] CRITICAL: '
+          'Maximum iteration limit reached '
+          '($maxIterations). '
+          'Reaction processing stopped.',
+        );
+
         break;
       }
+
       final (currentPos, depth) = queue.removeFirst();
+
       final currentCell = grid[currentPos.row][currentPos.col];
-      final threshold = evaluator.getCriticalMass(currentPos);
 
-      if (currentCell.virusCount < threshold) continue;
+      final criticalMass = evaluator.getCriticalMass(currentPos);
 
-      if (depth > maxChainDepth) maxChainDepth = depth;
+      // Cell may have changed since it was queued.
+      if (currentCell.virusCount < criticalMass) {
+        continue;
+      }
+
+      // -----------------------------------------------------------
+      // STATISTICS
+      // -----------------------------------------------------------
+
       totalExplosions++;
-      if (events.length < maxEventCapacity) {
-        events.add(VirusExploded(
+
+      if (depth > maxChainDepth) {
+        maxChainDepth = depth;
+      }
+
+      // -----------------------------------------------------------
+      // EXPLOSION EVENT
+      // -----------------------------------------------------------
+
+      recordEvent(
+        VirusExploded(
           context,
           row: currentPos.row,
           col: currentPos.col,
           chainDepth: depth,
-        ));
-      }
+        ),
+      );
 
-      // Subtract exploded viruses and reset cell if empty
-      final remainingCount = currentCell.virusCount - threshold;
-      grid[currentPos.row][currentPos.col] = remainingCount == 0
+      // -----------------------------------------------------------
+      // REMOVE CRITICAL MASS
+      // -----------------------------------------------------------
+
+      final remainingCount = currentCell.virusCount - criticalMass;
+
+      final remainingCell = remainingCount == 0
           ? const VirusModel.empty()
-          : VirusModel(virusCount: remainingCount, playerId: playerId);
+          : VirusModel(
+              virusCount: remainingCount,
+              playerId: playerId,
+            );
 
-      if (events.length < maxEventCapacity) {
-        events.add(CellUpdated(
+      grid[currentPos.row][currentPos.col] = remainingCell;
+
+      // -----------------------------------------------------------
+      // CELL UPDATE EVENT
+      // -----------------------------------------------------------
+
+      recordEvent(
+        CellUpdated(
           context,
           row: currentPos.row,
           col: currentPos.col,
-          virusCount: grid[currentPos.row][currentPos.col].virusCount,
-        ));
-      }
+          virusCount: remainingCell.virusCount,
+        ),
+      );
 
-      // Spread 1 virus to each neighbor
+      // -----------------------------------------------------------
+      // GET NEIGHBOURS
+      // -----------------------------------------------------------
+
       final neighbors = evaluator.getNeighbors(currentPos);
+
+      // -----------------------------------------------------------
+      // SPREAD
+      // -----------------------------------------------------------
+
       for (final neighborPos in neighbors) {
         totalSpreads++;
-        if (events.length < maxEventCapacity) {
-          events.add(VirusSpread(
+
+        // ---------------------------------------------------------
+        // SPREAD EVENT
+        // ---------------------------------------------------------
+
+        recordEvent(
+          VirusSpread(
             context,
             fromRow: currentPos.row,
             fromCol: currentPos.col,
             toRow: neighborPos.row,
             toCol: neighborPos.col,
             chainDepth: depth,
-          ));
-        }
+          ),
+        );
+
+        // ---------------------------------------------------------
+        // UPDATE NEIGHBOUR
+        // ---------------------------------------------------------
 
         final targetCell = grid[neighborPos.row][neighborPos.col];
-        grid[neighborPos.row][neighborPos.col] = targetCell.increment(playerId);
 
-        events.add(CellUpdated(
-          context,
-          row: neighborPos.row,
-          col: neighborPos.col,
-          virusCount: grid[neighborPos.row][neighborPos.col].virusCount,
-        ));
+        final updatedNeighbor = targetCell.increment(playerId);
 
-        if (grid[neighborPos.row][neighborPos.col].virusCount >=
-            evaluator.getCriticalMass(neighborPos)) {
-          queue.add((neighborPos, depth + 1));
+        grid[neighborPos.row][neighborPos.col] = updatedNeighbor;
+
+        // ---------------------------------------------------------
+        // CELL UPDATE EVENT
+        // ---------------------------------------------------------
+
+        recordEvent(
+          CellUpdated(
+            context,
+            row: neighborPos.row,
+            col: neighborPos.col,
+            virusCount: updatedNeighbor.virusCount,
+          ),
+        );
+
+        // ---------------------------------------------------------
+        // CHECK CRITICAL MASS
+        // ---------------------------------------------------------
+
+        final neighborCriticalMass = evaluator.getCriticalMass(neighborPos);
+
+        if (updatedNeighbor.virusCount >= neighborCriticalMass) {
+          queue.add(
+            (
+              neighborPos,
+              depth + 1,
+            ),
+          );
         }
       }
     }
 
+    // -------------------------------------------------------------
+    // DEBUG STATISTICS
+    // -------------------------------------------------------------
+
+    if (kDebugMode) {
+      debugPrint(
+        '[ReactionSimulator] '
+        'explosions=$totalExplosions | '
+        'spreads=$totalSpreads | '
+        'maxDepth=$maxChainDepth | '
+        'recordedEvents=${events.length} | '
+        'droppedEvents=$droppedEvents',
+      );
+    }
+
+    // -------------------------------------------------------------
+    // RESULT
+    // -------------------------------------------------------------
+
     return SimulationResult(
-      updatedBoard: Board(rows: board.rows, cols: board.cols, cells: grid),
+      updatedBoard: Board(
+        rows: board.rows,
+        cols: board.cols,
+        cells: grid,
+      ),
       events: events,
       totalExplosions: totalExplosions,
       totalSpreads: totalSpreads,
       maxChainDepth: maxChainDepth,
+      recordedEvents: events.length,
+      droppedEvents: droppedEvents,
     );
   }
 }
