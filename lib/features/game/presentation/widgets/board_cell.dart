@@ -1,5 +1,3 @@
-// lib/features/game/presentation/widgets/board_cell.dart
-import 'package:corona_virus/features/game/presentation/helpers/assets_resolver.dart';
 import 'package:corona_virus/features/game/presentation/widgets/virus_view.dart';
 import 'package:flutter/material.dart';
 import '../../domain/models/virus_model.dart';
@@ -8,21 +6,17 @@ class BoardCell extends StatelessWidget {
   final VirusModel cell;
   final bool isCritical; // is virus about to show its reactions
   final VoidCallback onTap;
-
+  final bool visible;
   const BoardCell({
     super.key,
     required this.cell,
     required this.isCritical,
     required this.onTap,
+    this.visible = true,
   });
 
   @override
   Widget build(BuildContext context) {
-    final asset = AssetsResolver.resolve(
-      virusCount: cell.virusCount,
-      isCritical: isCritical,
-    );
-
     return InkWell(
       onTap: onTap,
       child: Container(
@@ -33,22 +27,8 @@ class BoardCell extends StatelessWidget {
           child: VirusView(
             virus: cell,
             isCritical: isCritical,
-          )
-
-          //  asset == null
-          //     ? const SizedBox.expand()
-          //     : ColorFiltered(
-          //         colorFilter: ColorFilter.mode(
-          //           cellColor ?? Colors.red,
-          //           BlendMode.srcIn,
-          //         ),
-          //         child: Image.asset(
-          //           asset,
-          //           gaplessPlayback: true,
-          //           fit: BoxFit.contain,
-          //         ),
-          //       ),
-          ),
+            visible: visible,
+          )),
     );
   }
 }

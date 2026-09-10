@@ -5,6 +5,7 @@ import 'package:flutter_svg/flutter_svg.dart';
 import '../../domain/models/virus_model.dart';
 
 class VirusView extends StatelessWidget {
+  final bool visible;
   final VirusModel virus;
   final Color? virusColor;
   final bool isCritical;
@@ -13,6 +14,7 @@ class VirusView extends StatelessWidget {
     required this.virus,
     this.virusColor,
     required this.isCritical,
+    this.visible = true,
   });
 
   Widget _virus() {
@@ -29,6 +31,9 @@ class VirusView extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    if (!visible) {
+      return const SizedBox.shrink();
+    }
     return Padding(
       padding: const EdgeInsets.all(12.0),
       child: _virus(),

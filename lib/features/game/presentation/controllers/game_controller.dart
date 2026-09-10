@@ -17,6 +17,8 @@ class GameController extends ChangeNotifier {
   late GameState _state;
   void Function(PlayerEliminated event)? onPlayerEliminated;
   void Function(GameFinished event)? onGameFinished;
+  final void Function(GameEngineResult result, {required Board initialBoard})?
+      onTurnResolved;
 
   GameController({
     required GameEngine engine,
@@ -27,6 +29,7 @@ class GameController extends ChangeNotifier {
     String? gameId,
     this.onPlayerEliminated,
     this.onGameFinished,
+    this.onTurnResolved,
   })  : _engine = engine,
         _loggerAdapter = loggerAdapter,
         gameId = gameId ?? 'GAME-${DateTime.now().millisecondsSinceEpoch}',
@@ -55,7 +58,8 @@ class GameController extends ChangeNotifier {
       gameId: gameId,
       matchStartTime: _matchStartTime,
     );
-
+    final initialBoard = _state.board;
+    onTurnResolved?.call(result, initialBoard: initialBoard);
     _loggerAdapter.handleEvents(result.events);
     // Check for elimination events and dispatch callback
     // Dispatch lifecycle callbacks

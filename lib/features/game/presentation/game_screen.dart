@@ -1,4 +1,5 @@
 import 'package:corona_virus/core/logger/sinks/telemetry_sink.dart';
+import 'package:corona_virus/features/game/presentation/animations/reaction_coordinator.dart';
 import 'package:flutter/material.dart';
 import '../../../../core/logger/app_logger.dart';
 import '../../../../core/logger/sinks/console_log_sink.dart';
@@ -10,8 +11,10 @@ import '../domain/models/player_model.dart';
 import '../domain/models/position.dart';
 import '../domain/services/game_engine.dart';
 import '../domain/services/game_logger_adapter.dart';
+import 'animations/reaction_animation_controller.dart';
 import 'controllers/game_controller.dart';
 import 'widgets/board_cell.dart';
+import 'widgets/reaction_overlay.dart';
 
 class GameScreen extends StatefulWidget {
   const GameScreen({super.key});
@@ -28,7 +31,8 @@ class _GameScreenState extends State<GameScreen> {
   late final GameEngine _engine;
   late final GameLoggerAdapter _loggerAdapter;
   late GameController _controller;
-
+  late ReactionAnimationController _animationController;
+  late ReactionCoordinator _reactionCoordinator;
   @override
   void initState() {
     super.initState();
@@ -38,7 +42,9 @@ class _GameScreenState extends State<GameScreen> {
 
     final logger = AppLogger([ConsoleLogSink(), TelemetrySink.instance]);
     _loggerAdapter = GameLoggerAdapter(logger);
-
+    _animationController = ReactionAnimationController();
+    _reactionCoordinator =
+        ReactionCoordinator(animationController: _animationController);
     _initNewGame();
   }
 
@@ -56,6 +62,7 @@ class _GameScreenState extends State<GameScreen> {
       ],
       onPlayerEliminated: _handleElimination,
       onGameFinished: _handleGameFinished,
+      onTurnResolved: _reactionCoordinator.handleTurnResult,
     );
   }
 
@@ -153,13 +160,15 @@ class _GameScreenState extends State<GameScreen> {
   @override
   void dispose() {
     _controller.dispose();
+    _animationController.dispose();
+    _reactionCoordinator.dispose();
     super.dispose();
   }
 
   @override
   Widget build(BuildContext context) {
     return ListenableBuilder(
-      listenable: _controller,
+      listenable: Listenable.merge([_controller, _animationController]),
       builder: (context, _) {
         final activePlayer = _controller.currentPlayer;
         final activeColor = PlayerColors.fromIndex(activePlayer.id);
@@ -241,28 +250,42 @@ class _GameScreenState extends State<GameScreen> {
                       padding: const EdgeInsets.all(12.0),
                       child: AspectRatio(
                         aspectRatio: _cols / _rows,
-                        child: GridView.builder(
-                          physics: const NeverScrollableScrollPhysics(),
-                          itemCount: _rows * _cols,
-                          gridDelegate:
-                              const SliverGridDelegateWithFixedCrossAxisCount(
-                            crossAxisCount: _cols,
-                          ),
-                          itemBuilder: (context, index) {
-                            final r = index ~/ _cols;
-                            final c = index % _cols;
-                            final pos = Position(r, c);
-                            final cell = _controller.board.getAt(pos);
+                        child: LayoutBuilder(builder: (context, constraints) {
+                          return Stack(
+                            children: [
+                              GridView.builder(
+                                physics: const NeverScrollableScrollPhysics(),
+                                itemCount: _rows * _cols,
+                                gridDelegate:
+                                    const SliverGridDelegateWithFixedCrossAxisCount(
+                                  crossAxisCount: _cols,
+                                ),
+                                itemBuilder: (context, index) {
+                                  final r = index ~/ _cols;
+                                  final c = index % _cols;
+                                  final pos = Position(r, c);
+                                  final cell = _controller.board.getAt(pos);
 
-                            return BoardCell(
-                              cell: cell,
-                              isCritical: !cell.isEmpty &&
-                                  _evaluator.isAboutToExplode(pos, cell),
-                        
-                              onTap: () => _controller.onCellTapped(r, c),
-                            );
-                          },
-                        ),
+                                  return BoardCell(
+                                    cell: cell,
+                                    isCritical: !cell.isEmpty &&
+                                        _evaluator.isAboutToExplode(pos, cell),
+                                    visible: !_animationController.isCellMasked(
+                                        r, c),
+                                    onTap: () => _controller.onCellTapped(r, c),
+                                  );
+                                },
+                              ),
+                              // Animation layer
+                              ReactionAnimationOverlay(
+                                controller: _animationController,
+                                boardSize: constraints.biggest,
+                                rows: 8,
+                                columns: 6,
+                              ),
+                            ],
+                          );
+                        }),
                       ),
                     ),
                   ),

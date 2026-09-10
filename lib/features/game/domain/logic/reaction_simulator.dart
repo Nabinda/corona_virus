@@ -92,6 +92,8 @@ class ReactionSimulator {
         row: target.row,
         col: target.col,
         virusCount: updatedInitialCell.virusCount,
+        playerId: updatedInitialCell.playerId,
+        chainDepth: 0,
       ),
     );
 
@@ -174,6 +176,7 @@ class ReactionSimulator {
           context,
           row: currentPos.row,
           col: currentPos.col,
+          playerId: playerId,
           chainDepth: depth,
         ),
       );
@@ -203,6 +206,8 @@ class ReactionSimulator {
           row: currentPos.row,
           col: currentPos.col,
           virusCount: remainingCell.virusCount,
+          playerId: remainingCell.playerId,
+          chainDepth: depth,
         ),
       );
 
@@ -230,6 +235,7 @@ class ReactionSimulator {
             fromCol: currentPos.col,
             toRow: neighborPos.row,
             toCol: neighborPos.col,
+            playerId: playerId,
             chainDepth: depth,
           ),
         );
@@ -254,6 +260,8 @@ class ReactionSimulator {
             row: neighborPos.row,
             col: neighborPos.col,
             virusCount: updatedNeighbor.virusCount,
+            playerId: updatedNeighbor.playerId,
+            chainDepth: depth,
           ),
         );
 
