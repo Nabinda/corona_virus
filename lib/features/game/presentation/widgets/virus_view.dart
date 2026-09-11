@@ -115,7 +115,7 @@ class OrbitingVirus extends StatefulWidget {
     required this.color,
     this.virusCount = 2,
     this.spinFast = false,
-  }) : assert(virusCount == 2 || virusCount == 3);
+  }) : assert(virusCount >= 2 || virusCount <= 4);
 
   @override
   State<OrbitingVirus> createState() => _OrbitingVirusState();

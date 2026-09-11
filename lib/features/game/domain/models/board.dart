@@ -26,4 +26,26 @@ class Board {
     updated[pos.row][pos.col] = newCell;
     return Board(rows: rows, cols: cols, cells: updated);
   }
+
+  void setAt(Position pos, VirusModel value) {
+    cells[pos.row][pos.col] = value;
+  }
+
+  Board copy() {
+    final copied = Board(
+      rows: rows,
+      cols: cols,
+    );
+
+    for (int row = 0; row < rows; row++) {
+      for (int col = 0; col < cols; col++) {
+        copied.setAt(
+          Position(row, col),
+          cells[row][col],
+        );
+      }
+    }
+
+    return copied;
+  }
 }

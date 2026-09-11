@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:corona_virus/core/logger/sinks/telemetry_sink.dart';
 import 'package:flutter/material.dart';
 import '../../../../core/logger/app_logger.dart';
@@ -10,6 +12,7 @@ import '../domain/models/player_model.dart';
 import '../domain/models/position.dart';
 import '../domain/services/game_engine.dart';
 import '../domain/services/game_logger_adapter.dart';
+import 'animation/reaction_animation.dart';
 import 'controllers/game_controller.dart';
 import 'widgets/board_cell.dart';
 
@@ -23,11 +26,13 @@ class GameScreen extends StatefulWidget {
 class _GameScreenState extends State<GameScreen> {
   static const int _rows = 8;
   static const int _cols = 6;
-
+  Set<String> _hiddenCells = {};
   late final BoardEvaluator _evaluator;
   late final GameEngine _engine;
   late final GameLoggerAdapter _loggerAdapter;
   late GameController _controller;
+  late List<GameEvent> _reactionEvents;
+  Completer<void>? _reactionCompleter;
 
   @override
   void initState() {
@@ -35,7 +40,7 @@ class _GameScreenState extends State<GameScreen> {
     _evaluator = const BoardEvaluator(rows: _rows, cols: _cols);
     final simulator = ReactionSimulator(_evaluator);
     _engine = GameEngine(evaluator: _evaluator, simulator: simulator);
-
+    _reactionEvents = const [];
     final logger = AppLogger([ConsoleLogSink(), TelemetrySink.instance]);
     _loggerAdapter = GameLoggerAdapter(logger);
 
@@ -56,6 +61,15 @@ class _GameScreenState extends State<GameScreen> {
       ],
       onPlayerEliminated: _handleElimination,
       onGameFinished: _handleGameFinished,
+      onReactionAnimation: (events) async {
+        _reactionCompleter = Completer<void>();
+
+        setState(() {
+          _reactionEvents = events;
+        });
+
+        await _reactionCompleter!.future;
+      },
     );
   }
 
@@ -150,6 +164,10 @@ class _GameScreenState extends State<GameScreen> {
     });
   }
 
+  bool _isCellHidden(int row, int col) {
+    return _hiddenCells.contains('$row:$col');
+  }
+
   @override
   void dispose() {
     _controller.dispose();
@@ -241,27 +259,56 @@ class _GameScreenState extends State<GameScreen> {
                       padding: const EdgeInsets.all(12.0),
                       child: AspectRatio(
                         aspectRatio: _cols / _rows,
-                        child: GridView.builder(
-                          physics: const NeverScrollableScrollPhysics(),
-                          itemCount: _rows * _cols,
-                          gridDelegate:
-                              const SliverGridDelegateWithFixedCrossAxisCount(
-                            crossAxisCount: _cols,
-                          ),
-                          itemBuilder: (context, index) {
-                            final r = index ~/ _cols;
-                            final c = index % _cols;
-                            final pos = Position(r, c);
-                            final cell = _controller.board.getAt(pos);
+                        child: Stack(
+                          children: [
+                            GridView.builder(
+                              physics: const NeverScrollableScrollPhysics(),
+                              itemCount: _rows * _cols,
+                              gridDelegate:
+                                  const SliverGridDelegateWithFixedCrossAxisCount(
+                                crossAxisCount: _cols,
+                              ),
+                              itemBuilder: (context, index) {
+                                final r = index ~/ _cols;
+                                final c = index % _cols;
+                                final pos = Position(r, c);
+                                final cell = _controller.board.getAt(pos);
 
-                            return BoardCell(
-                              cell: cell,
-                              isCritical: !cell.isEmpty &&
-                                  _evaluator.isAboutToExplode(pos, cell),
-                        
-                              onTap: () => _controller.onCellTapped(r, c),
-                            );
-                          },
+                                return BoardCell(
+                                  cell: cell,
+                                  isCritical: !cell.isEmpty &&
+                                      _evaluator.isAboutToExplode(pos, cell),
+                                  onTap: () => _controller.onCellTapped(r, c),
+                                  hideVirus: _isCellHidden(r, c),
+                                );
+                              },
+                            ),
+                            ReactionAnimationLayer(
+                              events: _reactionEvents,
+                              rows: _rows,
+                              cols: _cols,
+                              playerColor: PlayerColors.fromIndex,
+                              onFinished: () {
+                                setState(() {
+                                  _reactionEvents = const [];
+                                });
+
+                                _reactionCompleter?.complete();
+
+                                _reactionCompleter = null;
+                              },
+                              onHiddenCellsChanged: (cells) {
+                                if (!mounted) return;
+
+                                setState(() {
+                                  _hiddenCells = cells;
+                                });
+                              },
+                              onDepthFinished: (depth, updates) async {
+                                _controller.applyAnimationUpdates(updates);
+                              },
+                            ),
+                          ],
                         ),
                       ),
                     ),

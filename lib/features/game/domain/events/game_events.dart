@@ -63,12 +63,15 @@ class CellUpdated extends GameEvent {
   final int row;
   final int col;
   final int virusCount;
-
+  final int? playerId;
+  final int chainDepth;
   CellUpdated(
     super.context, {
     required this.row,
     required this.col,
     required this.virusCount,
+    required this.playerId,
+    required this.chainDepth,
   });
 }
 
@@ -86,12 +89,13 @@ class VirusExploded extends GameEvent {
   final int row;
   final int col;
   final int chainDepth;
-
+  final int playerID;
   VirusExploded(
     super.context, {
     required this.row,
     required this.col,
     required this.chainDepth,
+    required this.playerID,
   });
 }
 
@@ -102,13 +106,14 @@ class VirusSpread extends GameEvent {
   final int toRow;
   final int toCol;
   final int chainDepth;
-
+  final int playerId;
   VirusSpread(
     super.context, {
     required this.fromRow,
     required this.fromCol,
     required this.toRow,
     required this.toCol,
+    required this.playerId,
     required this.chainDepth,
   });
 }
